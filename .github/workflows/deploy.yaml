@@ -17,8 +17,8 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Salesforce CLI
-        run: npm install --global sfdx-cli
+      - name: Install Salesforce CLI (new sf)
+        run: npm install --global @salesforce/cli
 
       - name: Parse PR Body
         id: parse
@@ -26,33 +26,47 @@ jobs:
         with:
           script: |
             const body = context.payload.pull_request.body || "";
-            const tokenMatch = body.match(/token:\s*(\S+)/);
-            const targetMatch = body.match(/target:\s*(\S+)/);
-            const testlevelMatch = body.match(/testlevel:\s*(\S+)/);
-            const testclassMatch = body.match(/testclass:\s*(.+)/);
 
-            if (!tokenMatch) throw new Error("Missing token in PR body");
+            function match(key, fallback="") {
+              const regex = new RegExp(key + ":\\s*(.+)", "i");
+              const match = body.match(regex);
+              return match ? match[1].trim() : fallback;
+            }
 
-            core.setOutput("token", tokenMatch[1]);
-            core.setOutput("target", targetMatch ? targetMatch[1] : "sandbox");
-            core.setOutput("testlevel", testlevelMatch ? testlevelMatch[1] : "NoTestRun");
-            core.setOutput("testclass", testclassMatch ? testclassMatch[1].split(',').map(s => s.trim()).join(',') : "");
+            const token = match("token");
+            if (!token) throw new Error("❌ Missing 'token' in PR body");
 
-      - name: Fetch Auth URL from middleware
+            core.setOutput("token", token);
+            core.setOutput("target", match("target", "sandbox"));
+            core.setOutput("testlevel", match("testlevel", "NoTestRun"));
+            core.setOutput("testclass", match("testclass", ""));
+
+      - name: Fetch Auth URL from Cloudflare Worker
+        id: auth
         run: |
-          AUTHURL=$(curl -s https://salesforce-middleware.onrender.com/auth/${{ steps.parse.outputs.token }} | jq -r '.authUrl')
+          echo "🔑 Fetching AuthURL from middleware..."
+          AUTHURL=$(curl -s https://salesforce-deployment-middleware.wisnuwardana-adimas.workers.dev/auth/${{ steps.parse.outputs.token }} | jq -r '.authUrl')
+          if [ -z "$AUTHURL" ] || [ "$AUTHURL" == "null" ]; then
+            echo "❌ Auth URL not returned by middleware"
+            exit 1
+          fi
           echo "$AUTHURL" > authurl.txt
           sf org login sfdx-url --sfdx-url-file authurl.txt --alias target --set-default
 
       - name: Deploy to Salesforce
         run: |
-          if [ "${{ steps.parse.outputs.testlevel }}" = "RunSpecifiedTests" ]; then
+          TESTLEVEL="${{ steps.parse.outputs.testlevel }}"
+          TESTCLASS="${{ steps.parse.outputs.testclass }}"
+
+          echo "🚀 Deploying with test level: $TESTLEVEL"
+
+          if [ "$TESTLEVEL" = "RunSpecifiedTests" ] && [ -n "$TESTCLASS" ]; then
             sf project deploy start --ignore-conflicts --wait 10 \
               --test-level RunSpecifiedTests \
-              --tests "${{ steps.parse.outputs.testclass }}"
+              --tests "$TESTCLASS"
           else
             sf project deploy start --ignore-conflicts --wait 10 \
-              --test-level "${{ steps.parse.outputs.testlevel }}"
+              --test-level "$TESTLEVEL"
           fi
 
       - name: Close PR if success
