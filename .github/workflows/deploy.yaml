@@ -69,15 +69,15 @@ jobs:
               --test-level "$TESTLEVEL"
           fi
 
-      - name: Close PR if success
+      - name: Comment on PR
         if: success()
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            await github.pulls.update({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              state: "closed"
+              issue_number: context.payload.pull_request.number,
+              body: "🚀 Deployment Success! PR closed automatically."
             })
