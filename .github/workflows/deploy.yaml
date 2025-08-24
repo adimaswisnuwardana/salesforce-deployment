@@ -1,0 +1,69 @@
+name: Salesforce Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Salesforce CLI
+        run: npm install --global sfdx-cli
+
+      - name: Parse PR Body
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || "";
+            const tokenMatch = body.match(/token:\s*(\S+)/);
+            const targetMatch = body.match(/target:\s*(\S+)/);
+            const testlevelMatch = body.match(/testlevel:\s*(\S+)/);
+            const testclassMatch = body.match(/testclass:\s*(.+)/);
+
+            if (!tokenMatch) throw new Error("Missing token in PR body");
+
+            core.setOutput("token", tokenMatch[1]);
+            core.setOutput("target", targetMatch ? targetMatch[1] : "sandbox");
+            core.setOutput("testlevel", testlevelMatch ? testlevelMatch[1] : "NoTestRun");
+            core.setOutput("testclass", testclassMatch ? testclassMatch[1].split(',').map(s => s.trim()).join(',') : "");
+
+      - name: Fetch Auth URL from middleware
+        run: |
+          AUTHURL=$(curl -s https://salesforce-middleware.onrender.com/auth/${{ steps.parse.outputs.token }} | jq -r '.authUrl')
+          echo "$AUTHURL" > authurl.txt
+          sf org login sfdx-url --sfdx-url-file authurl.txt --alias target --set-default
+
+      - name: Deploy to Salesforce
+        run: |
+          if [ "${{ steps.parse.outputs.testlevel }}" = "RunSpecifiedTests" ]; then
+            sf project deploy start --ignore-conflicts --wait 10 \
+              --test-level RunSpecifiedTests \
+              --tests "${{ steps.parse.outputs.testclass }}"
+          else
+            sf project deploy start --ignore-conflicts --wait 10 \
+              --test-level "${{ steps.parse.outputs.testlevel }}"
+          fi
+
+      - name: Close PR if success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              state: "closed"
+            })
