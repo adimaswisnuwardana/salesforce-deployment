@@ -6,8 +6,8 @@ Repo ini bisa dipakai untuk melakukan deployment dinamis ke Salesforce Org.
 1. Generate **SFDX Auth URL** dari org Salesforce kamu dengan cara login terlebih dahulu melalui VS Code dan ketikkan di terminal:
    sf org display --verbose
 2. Ambil Sfdx Auth Url
-3. POST ke middleware (URL: https://salesforce-middleware.onrender.com/generate) dengan format command line:
-   curl -X POST https://salesforce-middleware.onrender.com/generate \
+3. POST ke middleware (URL: https://salesforce-deployment-middleware.wisnuwardana-adimas.workers.dev/generate) dengan format command line:
+   curl -X POST https://salesforce-deployment-middleware.wisnuwardana-adimas.workers.dev/generate \
    -H "Content-Type: application/json" \
    -d '{"authUrl":"force://PlatformCLI::..."}
 
