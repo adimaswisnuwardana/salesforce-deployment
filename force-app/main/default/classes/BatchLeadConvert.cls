@@ -13,7 +13,7 @@ public with sharing class BatchLeadConvert implements Database.Batchable<SObject
             lc.setConvertedStatus(CONVERTED_STATUS);
             lc.setLeadId(record.Id);
 
-            leadConverts.add(lc);
+            leadConverts.add(lc);//testing
         }
         Database.convertLead(leadConverts, true);
     }
