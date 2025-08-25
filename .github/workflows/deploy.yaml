@@ -57,20 +57,33 @@ jobs:
           echo "$AUTHURL" > authurl.txt
           sf org login sfdx-url --sfdx-url-file authurl.txt --alias target --set-default
 
-      - name: Deploy to Salesforce
+      - name: Deploy only changed components
         run: |
           TESTLEVEL="${{ steps.parse.outputs.testlevel }}"
           TESTCLASS="${{ steps.parse.outputs.testclass }}"
 
           echo "🚀 Deploying with test level: $TESTLEVEL"
 
+          # Figure out changed files in PR (against base branch)
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD -- "force-app/**/*")
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "⚠️ No metadata changes found in this PR."
+            exit 0
+          fi
+
+          echo "📂 Files to deploy:"
+          echo "$CHANGED_FILES"
+
           if [ "$TESTLEVEL" = "RunSpecifiedTests" ] && [ -n "$TESTCLASS" ]; then
             sf project deploy start --ignore-conflicts --wait 10 \
               --test-level RunSpecifiedTests \
-              --tests "$TESTCLASS"
+              --tests "$TESTCLASS" \
+              --source-dir $CHANGED_FILES
           else
             sf project deploy start --ignore-conflicts --wait 10 \
-              --test-level "$TESTLEVEL"
+              --test-level "$TESTLEVEL" \
+              --source-dir $CHANGED_FILES
           fi
 
       - name: Close PR if success
