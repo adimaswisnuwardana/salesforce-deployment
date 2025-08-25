@@ -5,8 +5,7 @@ This repo helps to deploy your components to any Salesforce Orgs
 
 - Support deployment to any Salesforce org
 - Support all Unit Test Execution Levels
-- Auto close PR
-- Display error message upon error
+- Put comment after deployment successful
 
 
 ## How to Use
