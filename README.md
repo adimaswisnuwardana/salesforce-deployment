@@ -15,11 +15,11 @@ This repo helps to deploy your components to any Salesforce Orgs
 ```bash
 sf org display --verbose
 ```
-- POST **SFDX Auth URL** to the workers to get a token which you need to put in the Pull Request body by using below cli
+- POST **SFDX Auth URL** to the workers to get a token which you need to put in the Pull Request body by using cmd cli
 ```bash
-curl -X POST https://salesforce-deployment-middleware.wisnuwardana-adimas.workers.dev/generate \
--H "Content-Type: application/json" \
--d '{"authUrl":"force://PlatformCLI::..."}
+curl -X POST https://salesforce-deployment-middleware.wisnuwardana-adimas.workers.dev/generate ^
+-H "Content-Type: application/json" ^
+-d "{\"authUrl\":\"force://PlatformCLI::5Aep861TSESvWeug_zXv8B3Dafez...\"}"
 ```
 - Create Pull Request and put below template in the PR's body description
 ```bash
