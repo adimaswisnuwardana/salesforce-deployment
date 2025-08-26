@@ -20,7 +20,7 @@ curl -X POST https://salesforce-deployment-middleware.wisnuwardana-adimas.worker
 -H "Content-Type: application/json" ^
 -d "{\"authUrl\":\"force://PlatformCLI::5Aep861TSESvWeug_zXv8B3Dafez...\"}"
 ```
-- Create Pull Request and put below template in the PR's body description
+- Clone this repo, create new branch and create Pull Request and put below template in the PR's body description
 ```bash
 token: 123asdsampletoken
 target: sandbox/production
