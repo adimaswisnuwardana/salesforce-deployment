@@ -10,19 +10,23 @@ This repo helps to deploy your components to any Salesforce Orgs
 
 ## How to Use
 
-- Authorize your Salesforce org using VS Code or any cli support editor and fetch **SFDX Auth URL** using sf cli
+- Authorize your Salesforce org using VS Code or any cli support editor
+![Authorize](https://i.ibb.co/0pLZhTMt/Screenshot-2025-08-28-at-14-11-17.png)
+- Use below command in cmd to fetch **SFDX Auth URL**
 ```bash
 sf org display --verbose
 ```
-- POST **SFDX Auth URL** to the workers to get a token which you need to put in the Pull Request body by using cmd cli
+![SFDX AUTH URL](https://i.ibb.co/C5PTXYkY/Screenshot-2025-08-28-at-14-12-32.png)
+- Copy and POST **SFDX Auth URL** to the workers by using below command in the cmd to get a token which you need to put it in the Pull Request body later
 ```bash
 curl -X POST https://salesforce-deployment-middleware.wisnuwardana-adimas.workers.dev/generate ^
 -H "Content-Type: application/json" ^
--d "{\"authUrl\":\"force://PlatformCLI::5Aep861TSESvWeug_zXv8B3Dafez...\"}"
+-d "{\"authUrl\":\"REPLACE_THIS_WITH_YOUR_SFDX_AUTH_URL\"}"
 ```
+![TOKEN](https://i.ibb.co/KpzcJDRW/Screenshot-2025-08-28-at-22-41-31.png)
 - Clone this repo, create new branch, push components to the branch, and lastly create Pull Request with below template put them in the PR's body description
 ```bash
-token: 123asdsampletoken
+token: REPLACE_THIS_WITH_YOUR_TOKEN
 target: sandbox/production
 testlevel: RunSpecifiedTests
 testclass: MyTest1,MyTest2
